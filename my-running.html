@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin">
+<title>RUNPATH | 내 러닝 데이터</title>
+<style>
+:root{--dark:#0b3529;--green:#16875a;--line:#dfe9e3;--bg:#f4f8f5;--sub:#687c73}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#173a2e;font-family:system-ui,-apple-system,Apple SD Gothic Neo,sans-serif;line-height:1.6}header{background:var(--dark);color:white;padding:20px max(20px,calc((100vw - 960px)/2));display:flex;gap:20px;align-items:center;justify-content:space-between}header a{color:#fff;text-decoration:none}header strong{letter-spacing:1px;font-size:21px}header nav{display:flex;gap:15px;font-size:14px}main{max-width:960px;padding:32px 18px 80px;margin:auto}h1{font-size:29px;margin:0 0 6px}h2{font-size:19px;margin:0 0 18px}.muted{color:var(--sub);font-size:14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:white;padding:24px;border:1px solid var(--line);border-radius:16px;margin-top:19px;box-shadow:0 8px 30px #0a382008}.full{grid-column:1/-1}label{display:block;font-weight:700;font-size:13px;margin:11px 0 5px}input,select,textarea{width:100%;border:1px solid #b7cbc0;border-radius:9px;padding:12px;background:#fff;font:inherit}button{padding:11px 15px;background:var(--green);border:0;border-radius:9px;color:#fff;font-weight:700;cursor:pointer;margin-top:12px}button.secondary{background:#eaf4ed;color:#174a32}button:disabled{opacity:.55;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1}.row>button{flex:0 0 auto}.hidden{display:none!important}.notice{padding:13px;border-radius:10px;background:#ecf7ee;margin-top:18px;white-space:pre-wrap}.notice.error{background:#fff0eb;color:#9e311b}.item{border-top:1px solid var(--line);padding:12px 0}.item:first-child{border-top:0}.item strong{display:block}.item small{color:var(--sub)}.pill{display:inline-block;background:#e8f4ed;padding:4px 9px;border-radius:100px;font-size:12px;color:#235a40}.status{font-weight:700}.hint{font-size:12px;color:var(--sub)}@media(max-width:700px){.grid{grid-template-columns:1fr}header{display:block}header nav{margin-top:9px}main{padding-top:22px}}
+</style></head>
+<body><header><strong>↗ RUNPATH</strong><nav><a href="/">홈</a><a href="/dashboard.html">개발 대시보드</a></nav></header>
+<main><h1>나의 러닝 데이터</h1><p class="muted">Supabase 데이터베이스와 직접 통신하는 MVP 실습 화면 · 실제 GPS 경로 탐색은 아직 지원하지 않습니다.</p>
+<div id="message" role="status" aria-live="polite" class="notice">연결 준비 중…</div>
+<section id="authPanel" class="card"><h2>회원가입 / 로그인</h2><p class="muted">러닝 기록은 로그인한 본인만 볼 수 있습니다. 비밀번호는 RUNPATH 화면에 저장하지 않습니다.</p>
+<form id="authForm"><label for="email">이메일</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com"><label for="password">비밀번호</label><input id="password" type="password" autocomplete="current-password" minlength="6" required><div class="row"><button type="submit">로그인</button><button type="button" class="secondary" id="register">회원가입</button></div></form>
+<p class="hint">이메일 확인이 요구되면 메일함에서 인증을 완료한 뒤 이 화면에서 로그인하세요.</p></section>
+<div id="appPanel" class="hidden"><section class="card"><div class="row"><div><h2>내 계정</h2><span class="muted" id="userEmail"></span></div><button type="button" class="secondary" id="logout">로그아웃</button></div></section>
+<div class="grid">
+<section class="card"><h2>러닝 선호 설정</h2><form id="prefsForm">
+<label for="distance">목표 거리 (km)</label><input id="distance" type="number" min="0.1" max="100" step="0.1" value="10" required>
+<label for="congestion">선호 혼잡도</label><select id="congestion"><option value="quiet">조용함</option><option value="moderate">다소 혼잡</option><option value="busy">사람 많음</option><option value="any">상관없음</option></select>
+<label><input id="lights" type="checkbox" checked style="width:auto"> 신호등 최소 경로 선호</label><button type="submit">설정 저장</button></form></section>
+<section class="card"><h2>추천 경로 저장</h2><p class="hint">아래 입력값은 사용자 입력 기반 저장 기록이며 자동 경로 추천 결과가 아닙니다.</p><form id="routeForm">
+<label for="routeName">경로 이름</label><input id="routeName" maxlength="100" placeholder="광안리 러닝" required>
+<label for="start">출발지</label><input id="start" maxlength="200" placeholder="경성대학교 한성관" required>
+<label for="destination">목적지</label><input id="destination" maxlength="200" placeholder="광안리 해변">
+<label for="routeDistance">거리 (km)</label><input id="routeDistance" type="number" min="0.01" max="200" step="0.01" value="10.4" required>
+<label for="routeLights">신호등 수 (선택)</label><input id="routeLights" type="number" min="0" max="1000" step="1">
+<button type="submit">경로 저장</button></form></section>
+<section class="card"><h2>내 저장 경로</h2><div id="routeList" class="muted">아직 저장된 경로가 없습니다.</div></section>
+<section class="card"><h2>러닝 기록 추가</h2><form id="sessionForm">
+<label for="sessionDistance">운동 거리 (km)</label><input id="sessionDistance" type="number" min="0.01" max="200" step="0.01" required>
+<label for="sessionMinutes">운동 시간 (분)</label><input id="sessionMinutes" type="number" min="1" max="1440" step="1" required>
+<button type="submit">완료 기록 저장</button></form><h2 style="margin-top:25px">최근 러닝 기록</h2><div id="sessionList" class="muted">아직 운동 기록이 없습니다.</div></section>
+</div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+<script>
+(()=>{'use strict';
+const url="https://zyowgebmbzfpkctukcqe.supabase.co",key="sb_publishable_NxaxgUZCTtJUkpwxAR7Svw_l42b9rxM";
+const $=id=>document.getElementById(id);const msg=(text,isError=false)=>{$('message').textContent=text;$('message').classList.toggle('error',isError)};
+if(!window.supabase?.createClient){msg('Supabase 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.',true);return}
+const db=window.supabase.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+let activeUser=null;
+function item(parent,title,sub){const div=document.createElement('div');div.className='item';const strong=document.createElement('strong');strong.textContent=title;const small=document.createElement('small');small.textContent=sub;div.append(strong,small);parent.append(div)}
+function handleError(e){msg(e?.message||'요청 중 오류가 발생했습니다.',true)}
+async function refresh(){
+ if(!activeUser)return;
+ const [pr,rr,ss]=await Promise.all([
+ db.from('running_preferences').select('preferred_distance_km,congestion_preference,minimize_traffic_lights').eq('user_id',activeUser.id).maybeSingle(),
+ db.from('saved_routes').select('id,route_name,start_label,destination_label,distance_km,traffic_light_count').order('created_at',{ascending:false}).limit(20),
+ db.from('running_sessions').select('id,actual_distance_km,elapsed_seconds,started_at,status').order('started_at',{ascending:false}).limit(20)
+ ]);
+ const err=pr.error||rr.error||ss.error;if(err){handleError(err);return}
+ if(pr.data){$('distance').value=pr.data.preferred_distance_km;$('congestion').value=pr.data.congestion_preference;$('lights').checked=pr.data.minimize_traffic_lights}
+ $('routeList').replaceChildren();if(!rr.data?.length)$('routeList').textContent='아직 저장된 경로가 없습니다.';
+ for(const r of rr.data||[])item($('routeList'),r.route_name+' · '+r.distance_km+'km',r.start_label+' → '+(r.destination_label||'목적지 미설정')+' / 신호등 '+(r.traffic_light_count??'미입력'));
+ $('sessionList').replaceChildren();if(!ss.data?.length)$('sessionList').textContent='아직 운동 기록이 없습니다.';
+ for(const s of ss.data||[])item($('sessionList'),s.actual_distance_km+'km · '+Math.round(s.elapsed_seconds/60)+'분',new Date(s.started_at).toLocaleString('ko-KR')+' / '+s.status);
+ msg('Supabase 연결 정상 · 나의 데이터를 불러왔습니다.');
+}
+async function setUser(u){activeUser=u;$('authPanel').classList.toggle('hidden',!!u);$('appPanel').classList.toggle('hidden',!u);$('userEmail').textContent=u?.email||'';if(u)await refresh();else msg('Supabase 연결됨 · 로그인 후 데이터를 저장하고 조회할 수 있습니다.')}
+$('authForm').addEventListener('submit',async e=>{e.preventDefault();msg('로그인 확인 중…');const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)handleError(error)});
+$('register').addEventListener('click',async()=>{if(!$('authForm').reportValidity())return;msg('회원가입 요청 중…');const {data,error}=await db.auth.signUp({email:$('email').value.trim(),password:$('password').value});if(error)handleError(error);else msg(data.session?'회원가입 및 로그인 완료':'회원가입 요청 완료. 이메일 확인이 필요한 경우 인증 메일을 확인하세요.')});
+$('logout').addEventListener('click',async()=>{const {error}=await db.auth.signOut();if(error)handleError(error)});
+$('prefsForm').addEventListener('submit',async e=>{e.preventDefault();if(!activeUser)return;const {error}=await db.from('running_preferences').upsert({user_id:activeUser.id,preferred_distance_km:Number($('distance').value),congestion_preference:$('congestion').value,minimize_traffic_lights:$('lights').checked,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)handleError(error);else await refresh()});
+$('routeForm').addEventListener('submit',async e=>{e.preventDefault();if(!activeUser)return;const value=$('routeLights').value;const {error}=await db.from('saved_routes').insert({user_id:activeUser.id,route_name:$('routeName').value.trim(),start_label:$('start').value.trim(),destination_label:$('destination').value.trim()||null,distance_km:Number($('routeDistance').value),traffic_light_count:value===''?null:Number(value),congestion_level:'unknown'});if(error)handleError(error);else{$('routeForm').reset();await refresh()}});
+$('sessionForm').addEventListener('submit',async e=>{e.preventDefault();if(!activeUser)return;const distance=Number($('sessionDistance').value),seconds=Number($('sessionMinutes').value)*60;const pace=Math.round(seconds/distance);const {error}=await db.from('running_sessions').insert({user_id:activeUser.id,actual_distance_km:distance,elapsed_seconds:seconds,avg_pace_seconds_per_km:pace>=120&&pace<=1800?pace:null,status:'completed',started_at:new Date(Date.now()-seconds*1000).toISOString(),ended_at:new Date().toISOString()});if(error)handleError(error);else{$('sessionForm').reset();await refresh()}});
+db.auth.onAuthStateChange((_event,session)=>{Promise.resolve().then(()=>{if(session?.user?.id!==activeUser?.id)setUser(session?.user||null)})});
+db.auth.getUser().then(({data,error})=>{if(error){handleError(error);return}setUser(data.user)}).catch(handleError);
+})();
+</script></body></html>
